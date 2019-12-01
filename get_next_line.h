@@ -11,6 +11,7 @@
 	size_t	position;
 	size_t	offset;
 	size_t	size;
+	int error;
 	int	eof;
 } t_data;
 
