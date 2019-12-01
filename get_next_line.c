@@ -5,7 +5,7 @@
 #include <string.h>
 #include <strings.h>
 //#include "libft.h"
-// MUST REMOVE STRING
+// MUST REMOVE STRING 
 
  
 int testLine(t_data *data)
@@ -15,7 +15,7 @@ int testLine(t_data *data)
     i = data->offset;
     while (i < data->size)
     {
-        if (data->content[i] == '\n')
+        if (data->content[i] == '\n' ||  data->content[i] == 26)
         {
             data->offset = i;
             return (1);
@@ -38,30 +38,33 @@ int extract(char **line, t_data **data)
     if ((result = ((*data)->size == 0) ? 0 : 1) || !(*data)->eof)
     {
         size = (*data)->offset - (*data)->position;
-        temp = strnew(size);
+        if(!(temp = strnew(size)))
+            (*data)->error =1;
         memmove(temp, ((*data)->content + (*data)->position), size);
         (*data)->position = (*data)->position + size + 1;
         *line = temp;
-
         (*data)->offset = (*data)->position;
         testLine(*data);
     }
-        
-
-     if(flag)
+    if (flag || (*data)->error)
     {
+        result = (*data)->error ? -1 : result;
         strdel(&(*data)->content);
         memdel((void**) data);
-        *data = NULL;
     }
-    return (result);
+     return (result);
 }
  
 int append(t_data **dest, char *buf, size_t size)
 {
     char *content;
 
-    content = (char *)malloc(sizeof(char) * (size + (*dest)->size));
+    if(!(content = (char *)malloc(sizeof(char) * (size + (*dest)->size))))
+    {
+        (*dest)->error = 1;
+        return (0);
+    }
+        
     memmove(content, (*dest)->content, (*dest)->size);
     memmove(content + (*dest)->size, buf, size);
     (*dest)->size = (*dest)->size + size;
@@ -69,7 +72,7 @@ int append(t_data **dest, char *buf, size_t size)
     if ((*dest)->content)
         strdel((&((*dest)->content)));
     (*dest)->content = content;
-    return (0);
+    return (1);
 }
  
 int clean_content(t_data **data)
@@ -78,15 +81,13 @@ int clean_content(t_data **data)
     size_t size;
     size_t new_size;
 
-    if (!(*data))
-    {
-        *data = (t_data *)memnew(sizeof(t_data));
-        return (1);
-    }
+    if (!(*data) && !(*data = (t_data *)memnew(sizeof(t_data))))
+        return (0);
     if ((*data)->position == (*data)->offset)
         {
             new_size = (*data)->size - (*data)->offset;
-            temp = strnew(new_size);
+            if((temp = strnew(new_size)))
+            {
             memmove(temp, ((*data)->content + (*data)->offset), new_size);
             strdel(&((*data)->content));
             (*data)->content = temp;
@@ -94,9 +95,11 @@ int clean_content(t_data **data)
             (*data)->offset = 0;
             (*data)->size = new_size;
             return (1);
-   
-    }
-    return (0);
+            }
+        }
+            strdel(&((*data)->content));
+            memdel((void **)data);
+            return (0);
 }
  
 int get_next_line(const int fd, char **line)
@@ -107,14 +110,19 @@ int get_next_line(const int fd, char **line)
 
     if (!lb || lb->position == lb->offset)
     {
-        clean_content(&lb);
-        while(!testLine(lb) && !lb->eof)
+        if(!clean_content(&lb))
+            return (-1); 
+        while(!testLine(lb) && !lb->eof && !lb->error)
         {   
             readSize = read(fd, buff, BUFF_SIZE );
             if ((lb->eof = (readSize  <  BUFF_SIZE) ? 1 : 0))
                 testLine(lb);
-            append(&lb, buff, readSize);
-            
+            if (!append(&lb, buff, readSize) || lb->error)
+            {
+                strdel(&(lb->content));
+                memdel((void **)&lb);
+                return (-1);
+            }           
         }
     }
     return (extract(line, &lb));
