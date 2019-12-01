@@ -38,8 +38,7 @@ int extract(char **line, t_data **data)
     if ((result = ((*data)->size == 0) ? 0 : 1) || !(*data)->eof)
     {
         size = (*data)->offset - (*data)->position;
-        (*data)->error = (temp = strnew(size)) ? (*data)->error : 1;
-        if (!(*data)->error)
+        if(!((*data)->error = (temp = strnew(size)) ? (*data)->error : 1))
         {
         memmove(temp, ((*data)->content + (*data)->position), size);
         (*data)->position = (*data)->position + size + 1;
