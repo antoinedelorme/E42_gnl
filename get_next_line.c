@@ -38,13 +38,15 @@ int extract(char **line, t_data **data)
     if ((result = ((*data)->size == 0) ? 0 : 1) || !(*data)->eof)
     {
         size = (*data)->offset - (*data)->position;
-        if(!(temp = strnew(size)))
-            (*data)->error =1;
+        (*data)->error = (temp = strnew(size)) ? (*data)->error : 1;
+        if (!(*data)->error)
+        {
         memmove(temp, ((*data)->content + (*data)->position), size);
         (*data)->position = (*data)->position + size + 1;
         *line = temp;
         (*data)->offset = (*data)->position;
         testLine(*data);
+        }
     }
     if (flag || (*data)->error)
     {
