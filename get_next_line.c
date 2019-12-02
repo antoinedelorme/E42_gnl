@@ -6,7 +6,7 @@
 /*   By: adelorme <adelorme@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/02 11:41:18 by adelorme          #+#    #+#             */
-/*   Updated: 2019/12/02 11:50:56 by adelorme         ###   ########.fr       */
+/*   Updated: 2019/12/02 13:13:53 by adelorme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "get_next_line.h"
 #include "libft.h"
 
-int	test_line(t_data *data)
+static int	test_line(t_data *data)
 {
 	size_t i;
 
@@ -33,21 +33,21 @@ int	test_line(t_data *data)
 	return (0);
 }
 
-int	extract(char **line, t_data **dt, int flag)
+static int	extract(char **line, t_data **dt, int flag)
 {
-	char	*temp;
+	char	*tp;
 	int		result;
 
 	result = ((*dt)->size == 0) ? 0 : 1;
 	if (result || !(*dt)->eof)
 	{
-		temp = ft_strnew((*dt)->nxt - (*dt)->pos);
-		(*dt)->error = temp ? (*dt)->error : 1;
+		tp = ft_strnew((*dt)->nxt - (*dt)->pos);
+		(*dt)->error = tp ? (*dt)->error : 1;
 		if (!(*dt)->error)
 		{
-			ft_memmove(temp, ((*dt)->cnt + (*dt)->pos), (*dt)->nxt - (*dt)->pos);
+			ft_memmove(tp, ((*dt)->cnt + (*dt)->pos), (*dt)->nxt - (*dt)->pos);
 			(*dt)->pos = (*dt)->pos + (*dt)->nxt - (*dt)->pos + 1;
-			*line = temp;
+			*line = tp;
 			(*dt)->nxt = (*dt)->pos;
 			test_line(*dt);
 		}
@@ -61,7 +61,7 @@ int	extract(char **line, t_data **dt, int flag)
 	return (result);
 }
 
-int	append(t_data **dest, char *buf, size_t size)
+static int	append(t_data **dest, char *buf, size_t size)
 {
 	char *cnt;
 
@@ -79,9 +79,9 @@ int	append(t_data **dest, char *buf, size_t size)
 	return (1);
 }
 
-int	clean_cnt(t_data **data)
+static int	clean_cnt(t_data **data)
 {
-	char	*temp;
+	char	*tp;
 	size_t	new_size;
 
 	if (!(*data) && !(*data = (t_data *)ft_memalloc(sizeof(t_data))))
@@ -89,11 +89,11 @@ int	clean_cnt(t_data **data)
 	if ((*data)->pos == (*data)->nxt)
 	{
 		new_size = (*data)->size - (*data)->nxt;
-		if ((temp = ft_strnew(new_size)))
+		if ((tp = ft_strnew(new_size)))
 		{
-			ft_memmove(temp, ((*data)->cnt + (*data)->nxt), new_size);
+			ft_memmove(tp, ((*data)->cnt + (*data)->nxt), new_size);
 			ft_strdel(&((*data)->cnt));
-			(*data)->cnt = temp;
+			(*data)->cnt = tp;
 			(*data)->pos = 0;
 			(*data)->nxt = 0;
 			(*data)->size = new_size;
@@ -105,10 +105,10 @@ int	clean_cnt(t_data **data)
 	return (0);
 }
 
-int	get_next_line(const int fd, char **line)
+int			get_next_line(const int fd, char **line)
 {
 	char			buff[BUFF_SIZE];
-	size_t			read_size;
+	ssize_t			read_size;
 	static t_data	*lb;
 	int				flag;
 
@@ -119,6 +119,7 @@ int	get_next_line(const int fd, char **line)
 		while (!test_line(lb) && !lb->eof && !lb->error)
 		{
 			read_size = read(fd, buff, BUFF_SIZE);
+			lb->error = (read_size == -1) ? 1 : lb->error;
 			if ((lb->eof = (read_size < BUFF_SIZE) ? 1 : 0))
 				test_line(lb);
 			if (!append(&lb, buff, read_size) || lb->error)
