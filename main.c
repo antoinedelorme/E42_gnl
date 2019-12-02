@@ -21,6 +21,8 @@ int main()
 
 	fd = open("test.txt",O_RDONLY);
 
+	i =0;
+
 	while (get_next_line(fd, &line) && i<10)
 	{
 		printf(KYEL);
